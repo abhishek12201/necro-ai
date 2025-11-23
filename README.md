@@ -1,16 +1,52 @@
 # 🧟 Necro AI - Legacy Code Resurrection Platform
 
-A stunning, dark Halloween-themed landing page for Necro AI - an AI-powered platform that resurrects legacy codebases and transforms them into modern masterpieces.
+A stunning, dark Halloween-themed landing page for Necro AI - an AI-powered platform that resurrects legacy codebases and transforms them into modern masterpieces. Built to win hackathons with pixel-perfect design and mesmerizing animations.
 
 ## ✨ Features
 
-- **Hero Section**: Full-height animated gradient background with floating particles, glowing logo, and pulsing CTA buttons
-- **Features Grid**: 4 feature cards with hover effects, icon glows, and glass morphism
-- **How It Works**: Timeline visualization with 4 steps and animated reveals
-- **Testimonials**: 3 developer testimonials with gradient avatars and star ratings
-- **Pricing**: 3-tier pricing cards with "Most Popular" badge and hover effects
-- **Final CTA**: Email capture with particle background
-- **Smooth Animations**: Framer Motion scroll-triggered animations throughout
+- **Hero Section**: 
+  - Full-height animated gradient background with floating code snippets
+  - Pulsing green glow on `<AI />` logo
+  - Floating particles (green/purple dots) moving upward
+  - Scan line effect across background
+  - Legacy → Modern code transformations floating in background
+  
+- **Supernatural Features**: 
+  - Glass morphism cards with backdrop blur
+  - Animated border gradients (green to purple) on hover
+  - Icon background glows with green circular halos
+  - Premium spacing and card lift effects
+  
+- **How It Works**: 
+  - Animated timeline with pulsing green glow
+  - Checkmark icons appearing on scroll
+  - Large step numbers with green glow rings
+  - Expandable cards on hover
+  
+- **Testimonials**: 
+  - Emoji avatars (👻💀🎃) in circular badges
+  - Company logo placeholders with initials
+  - Verified badges next to developer names
+  - Enhanced readability with larger text
+  
+- **Pricing**: 
+  - Floating "Most Popular" badge with green glow animation
+  - Taller cards with premium shadows
+  - Lift and glow effects on hover
+  - Green checkmarks for features
+  
+- **Final CTA**: 
+  - Matrix-style grid background
+  - Floating ghost/skull emojis
+  - Large email input with green focus glow
+  - Pulsing submit button
+  - Social proof: "Join 1000+ developers"
+  
+- **Footer**: 
+  - GitHub and Twitter links
+  - "Built with Kiro" badge
+  - Custom green scrollbar
+  - Green text selection
 
 ## 🎨 Design System
 
