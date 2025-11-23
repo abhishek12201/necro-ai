@@ -11,7 +11,24 @@
   }
 }
 
+* {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--color-necro-darker);
   color: var(--color-foreground);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41, 0 0 15px #00ff41;
+  }
+  50% {
+    box-shadow: 0 0 20px #00ff41, 0 0 30px #00ff41, 0 0 40px #00ff41;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
