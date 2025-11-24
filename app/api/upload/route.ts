@@ -1,45 +1,37 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+﻿import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, description, repoUrl } = body
+    const body = await request.json();
+    const { code, filename, projectName } = body;
 
-    // Basic validation
-    if (!name || !repoUrl) {
+    // Validation
+    if (!code || !filename || !projectName) {
       return NextResponse.json(
-        { error: 'Name and repository URL are required' },
+        { error: 'Missing required fields' },
         { status: 400 }
-      )
+      );
     }
 
-    // Create project in database
-    const { data: project, error } = await supabase
-      .from('projects')
-      .insert({
-        name,
-        description,
-        repo_url: repoUrl,
-        status: 'analyzing'
-      })
-      .select()
-      .single()
+    // In a real app, you would save this to a database
+    // For now, we'll just return a mock upload ID
+    const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    if (error) throw error
+    // Simulate processing time
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // Return project ID for tracking
-    return NextResponse.json({ 
-      success: true,
-      projectId: project.id,
-      message: 'Project created successfully'
-    })
-
+    return NextResponse.json({
+      id: uploadId,
+      filename,
+      projectName,
+      uploadedAt: new Date().toISOString(),
+      status: 'success',
+    });
   } catch (error) {
-    console.error('Upload error:', error)
+    console.error('Upload error:', error);
     return NextResponse.json(
-      { error: 'Failed to create project' },
+      { error: 'Failed to upload code' },
       { status: 500 }
-    )
+    );
   }
 }

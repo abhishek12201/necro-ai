@@ -212,6 +212,7 @@ const HeroSection = () => {
           <Button 
             size="lg" 
             className="text-xl px-10 py-7 bg-necro-green text-necro-darker hover:bg-necro-green/90 animate-pulse-glow font-bold"
+            onClick={() => window.location.href = '/dashboard'}
           >
             <Sparkles className="mr-2 w-6 h-6" />
             Start Resurrection
