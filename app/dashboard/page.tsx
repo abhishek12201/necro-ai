@@ -20,6 +20,9 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  Github,
+  FileCode,
+  FolderGit2,
 } from 'lucide-react';
 
 // Types
@@ -48,6 +51,17 @@ interface AnalysisResult {
   }>;
 }
 
+interface RepoFile {
+  path: string;
+  type: string;
+  size: number;
+}
+
+interface CloneResult {
+  filesFound: number;
+  files: RepoFile[];
+}
+
 export default function DashboardPage() {
   const [code, setCode] = useState('');
   const [filename, setFilename] = useState('');
@@ -57,6 +71,14 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+
+  // GitHub repo state
+  const [githubUrl, setGithubUrl] = useState('');
+  const [repoProjectName, setRepoProjectName] = useState('');
+  const [isCloning, setIsCloning] = useState(false);
+  const [cloneProgress, setCloneProgress] = useState('');
+  const [cloneResult, setCloneResult] = useState<CloneResult | null>(null);
+  const [githubError, setGithubError] = useState<string | null>(null);
 
   const loadDemo = async (demoType: 'wordpress' | 'express') => {
     setIsLoadingDemo(true);
@@ -86,6 +108,83 @@ export default function DashboardPage() {
       setError(err instanceof Error ? err.message : 'Failed to load demo');
     } finally {
       setIsLoadingDemo(false);
+    }
+  };
+
+  const handleCloneRepo = async () => {
+    // Validation
+    if (!githubUrl.trim()) {
+      setGithubError('Please enter a GitHub URL');
+      return;
+    }
+    if (!repoProjectName.trim()) {
+      setGithubError('Please enter a project name');
+      return;
+    }
+
+    setGithubError(null);
+    setIsCloning(true);
+    setCloneResult(null);
+
+    try {
+      // Step 1: Cloning
+      setCloneProgress('Cloning repository...');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Step 2: Analyzing files
+      setCloneProgress('Analyzing files...');
+      const cloneResponse = await fetch('/api/clone-repo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ githubUrl, projectName: repoProjectName }),
+      });
+
+      if (!cloneResponse.ok) {
+        throw new Error('Failed to clone repository');
+      }
+
+      const cloneData = await cloneResponse.json();
+
+      // Step 3: Complete
+      setCloneProgress('Complete!');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      setCloneResult(cloneData);
+      setCloneProgress('');
+    } catch (err) {
+      setGithubError(err instanceof Error ? err.message : 'Failed to clone repository');
+      setCloneProgress('');
+    } finally {
+      setIsCloning(false);
+    }
+  };
+
+  const handleBatchAnalysis = async () => {
+    if (!cloneResult) return;
+
+    setGithubError(null);
+    setIsAnalyzing(true);
+
+    try {
+      const batchResponse = await fetch('/api/batch-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName: repoProjectName,
+          files: cloneResult.files,
+        }),
+      });
+
+      if (!batchResponse.ok) {
+        throw new Error('Failed to analyze repository');
+      }
+
+      const analysisData = await batchResponse.json();
+      setAnalysisResult(analysisData);
+    } catch (err) {
+      setGithubError(err instanceof Error ? err.message : 'Failed to analyze repository');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -198,7 +297,131 @@ export default function DashboardPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
+            className="space-y-6"
           >
+            {/* GitHub Repository Analysis Section */}
+            <Card className="p-6 bg-necro-darker/50 border-necro-purple/20 backdrop-blur-md">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-lg bg-necro-purple/10 flex items-center justify-center">
+                  <Github className="w-5 h-5 text-necro-purple" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Analyze GitHub Repository</h2>
+              </div>
+
+              {githubError && (
+                <Alert className="mb-4 bg-red-500/10 border-red-500/30 text-red-400">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="ml-2">{githubError}</span>
+                </Alert>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    GitHub URL
+                  </label>
+                  <Input
+                    placeholder="https://github.com/username/repo"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    className="bg-necro-dark/50 border-necro-purple/20 text-white placeholder:text-gray-500 focus:border-necro-purple"
+                    disabled={isCloning || isAnalyzing}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Project Name
+                  </label>
+                  <Input
+                    placeholder="e.g., Legacy E-commerce Platform"
+                    value={repoProjectName}
+                    onChange={(e) => setRepoProjectName(e.target.value)}
+                    className="bg-necro-dark/50 border-necro-purple/20 text-white placeholder:text-gray-500 focus:border-necro-purple"
+                    disabled={isCloning || isAnalyzing}
+                  />
+                </div>
+
+                {cloneProgress && (
+                  <div className="p-4 bg-necro-dark/50 rounded-lg border border-necro-purple/20">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-necro-purple animate-spin" />
+                      <span className="text-necro-purple font-medium">{cloneProgress}</span>
+                    </div>
+                  </div>
+                )}
+
+                {!cloneResult ? (
+                  <Button
+                    onClick={handleCloneRepo}
+                    disabled={isCloning || isAnalyzing}
+                    className="w-full bg-necro-green text-necro-darker hover:bg-necro-green/90 font-bold py-6 text-lg shadow-[0_0_20px_rgba(0,255,65,0.3)]"
+                  >
+                    {isCloning ? (
+                      <>
+                        <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                        Cloning Repository...
+                      </>
+                    ) : (
+                      <>
+                        <FolderGit2 className="mr-2 w-5 h-5" />
+                        Clone & Analyze
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-necro-dark/50 rounded-lg border border-necro-green/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-300">Files Found</span>
+                        <Badge className="bg-necro-green/20 text-necro-green border-necro-green/30">
+                          {cloneResult.filesFound} files
+                        </Badge>
+                      </div>
+                      <div className="max-h-40 overflow-y-auto space-y-2">
+                        {cloneResult.files.slice(0, 10).map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 text-sm text-gray-400 p-2 bg-necro-darker/50 rounded"
+                          >
+                            <FileCode className="w-4 h-4 text-necro-purple" />
+                            <span className="truncate">{file.path}</span>
+                            <span className="text-xs text-gray-500 ml-auto">
+                              {(file.size / 1024).toFixed(1)}KB
+                            </span>
+                          </div>
+                        ))}
+                        {cloneResult.files.length > 10 && (
+                          <p className="text-xs text-gray-500 text-center pt-2">
+                            + {cloneResult.files.length - 10} more files
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleBatchAnalysis}
+                      disabled={isAnalyzing}
+                      className="w-full bg-necro-purple text-white hover:bg-necro-purple/90 font-bold py-6 text-lg"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                          Analyzing Files...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-2 w-5 h-5" />
+                          Start Batch Analysis
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Upload Legacy Code Section */}
             <Card className="p-6 bg-necro-darker/50 border-necro-green/20 backdrop-blur-md">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-lg bg-necro-green/10 flex items-center justify-center">
