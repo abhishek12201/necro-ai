@@ -25,7 +25,10 @@ import {
   Github,
   FileCode,
   FolderGit2,
+  Download,
+  Sparkles,
 } from 'lucide-react';
+import { ToastProvider, useToast } from '@/components/ui/toast';
 
 // Types
 interface CodeExample {
@@ -72,7 +75,7 @@ interface CloneResult {
   files: RepoFile[];
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [code, setCode] = useState('');
   const [filename, setFilename] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -90,6 +93,12 @@ export default function DashboardPage() {
   const [isCloning, setIsCloning] = useState(false);
   const [cloneProgress, setCloneProgress] = useState('');
   const [cloneResult, setCloneResult] = useState<CloneResult | null>(null);
+
+  // Code generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState('');
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const { showToast } = useToast();
   const [githubError, setGithubError] = useState<string | null>(null);
 
   const loadDemo = async (demoType: 'wordpress' | 'express') => {
@@ -202,6 +211,83 @@ export default function DashboardPage() {
       setGithubError(err instanceof Error ? err.message : 'Failed to analyze repository');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerateCode = async () => {
+    if (!analysisResult) return;
+
+    setIsGenerating(true);
+    setGenerationProgress('Initializing code transformation...');
+
+    try {
+      // Step 1: Initialize
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setGenerationProgress('Analyzing patterns and dependencies...');
+
+      // Step 2: Generate transformations
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      setGenerationProgress('Generating modern code equivalents...');
+
+      const generateResponse = await fetch('/api/generate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName: analysisResult.projectName,
+          analysis: analysisResult,
+        }),
+      });
+
+      if (!generateResponse.ok) {
+        throw new Error('Failed to generate code');
+      }
+
+      const generateData = await generateResponse.json();
+      setProjectId(generateData.projectId);
+
+      // Step 3: Complete
+      setGenerationProgress('Code generation complete!');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      showToast('Modern code generated successfully!', 'success');
+      setGenerationProgress('');
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Failed to generate code',
+        'error'
+      );
+      setGenerationProgress('');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadCode = async () => {
+    if (!projectId) return;
+
+    try {
+      const response = await fetch(`/api/download?projectId=${projectId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to download code');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${analysisResult?.projectName || 'modernized-code'}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      showToast('Code downloaded successfully!', 'success');
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Failed to download code',
+        'error'
+      );
     }
   };
 
@@ -770,6 +856,46 @@ export default function DashboardPage() {
                         originalTitle={`${analysisResult.codeExamples[selectedFileIndex].filename} (Legacy)`}
                         modernTitle={`${analysisResult.codeExamples[selectedFileIndex].filename} (Modern)`}
                       />
+
+                      {/* Generate/Download Buttons */}
+                      <div className="mt-6 space-y-4">
+                        {generationProgress && (
+                          <div className="p-4 bg-necro-dark/50 rounded-lg border border-necro-purple/20">
+                            <div className="flex items-center gap-3">
+                              <Loader2 className="w-5 h-5 text-necro-purple animate-spin" />
+                              <span className="text-necro-purple font-medium">{generationProgress}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {!projectId ? (
+                          <Button
+                            onClick={handleGenerateCode}
+                            disabled={isGenerating}
+                            className="w-full bg-necro-purple text-white hover:bg-necro-purple/90 font-bold py-6 text-lg shadow-[0_0_20px_rgba(157,78,221,0.3)]"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                                Generating Modern Code...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="mr-2 w-5 h-5" />
+                                Generate Modern Code
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleDownloadCode}
+                            className="w-full bg-necro-green text-necro-darker hover:bg-necro-green/90 font-bold py-6 text-lg shadow-[0_0_20px_rgba(0,255,65,0.3)]"
+                          >
+                            <Download className="mr-2 w-5 h-5" />
+                            Download Modernized Code
+                          </Button>
+                        )}
+                      </div>
                     </Card>
                   </div>
                 )}
@@ -779,5 +905,13 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ToastProvider>
+      <DashboardContent />
+    </ToastProvider>
   );
 }
