@@ -67,6 +67,84 @@ export async function POST(request: NextRequest) {
           benefit: 'Component-based architecture, virtual DOM, better performance',
         },
       ],
+      codeExamples: [
+        {
+          filename: 'app.js',
+          language: 'javascript',
+          originalCode: `// jQuery AJAX call
+$.ajax({
+  url: '/api/users',
+  type: 'GET',
+  success: function(data) {
+    $('#user-list').html('');
+    data.forEach(function(user) {
+      $('#user-list').append(
+        '<li>' + user.name + '</li>'
+      );
+    });
+  },
+  error: function(xhr, status, error) {
+    alert('Error: ' + error);
+  }
+});`,
+          modernCode: `// Modern fetch with async/await
+async function loadUsers() {
+  try {
+    const response = await fetch('/api/users');
+    const data = await response.json();
+    
+    const userList = document.getElementById('user-list');
+    userList.innerHTML = '';
+    
+    data.forEach(user => {
+      const li = document.createElement('li');
+      li.textContent = user.name;
+      userList.appendChild(li);
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    alert(\`Error: \${error.message}\`);
+  }
+}`,
+        },
+        {
+          filename: 'utils.js',
+          language: 'javascript',
+          originalCode: `// Callback hell
+function processUser(userId, callback) {
+  getUser(userId, function(err, user) {
+    if (err) return callback(err);
+    
+    getOrders(user.id, function(err, orders) {
+      if (err) return callback(err);
+      
+      getOrderDetails(orders[0].id, function(err, details) {
+        if (err) return callback(err);
+        
+        updateInventory(details, function(err, result) {
+          if (err) return callback(err);
+          callback(null, result);
+        });
+      });
+    });
+  });
+}`,
+          modernCode: `// Async/await
+async function processUser(userId) {
+  try {
+    const user = await getUser(userId);
+    const orders = await getOrders(user.id);
+    const details = await getOrderDetails(orders[0].id);
+    const result = await updateInventory(details);
+    
+    return result;
+  } catch (error) {
+    console.error('Error processing user:', error);
+    throw error;
+  }
+}`,
+        },
+      ],
       migrationRoadmap: [
         {
           step: 1,

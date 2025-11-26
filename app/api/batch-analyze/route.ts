@@ -82,6 +82,91 @@ export async function POST(request: NextRequest) {
           benefit: 'Encapsulation, no naming conflicts, better maintainability',
         },
       ],
+      codeExamples: [
+        {
+          filename: 'src/index.js',
+          language: 'javascript',
+          originalCode: `// jQuery event handling
+$(document).ready(function() {
+  $('#submit-btn').click(function() {
+    var username = $('#username').val();
+    var email = $('#email').val();
+    
+    $.post('/api/register', {
+      username: username,
+      email: email
+    }, function(response) {
+      alert('Success!');
+    });
+  });
+});`,
+          modernCode: `// Modern event handling
+document.addEventListener('DOMContentLoaded', () => {
+  const submitBtn = document.getElementById('submit-btn');
+  
+  submitBtn.addEventListener('click', async () => {
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email })
+      });
+      
+      const data = await response.json();
+      alert('Success!');
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  });
+});`,
+        },
+        {
+          filename: 'config/database.php',
+          language: 'php',
+          originalCode: `<?php
+// Legacy PHP with mysql_*
+$conn = mysql_connect('localhost', 'user', 'pass');
+mysql_select_db('mydb', $conn);
+
+$user_id = $_GET['id'];
+$query = "SELECT * FROM users WHERE id = " . $user_id;
+$result = mysql_query($query);
+
+if ($result) {
+  while ($row = mysql_fetch_assoc($result)) {
+    echo "<p>" . $row['name'] . "</p>";
+  }
+}
+mysql_close($conn);
+?>`,
+          modernCode: `<?php
+// Modern PHP with PDO
+try {
+  $pdo = new PDO(
+    'mysql:host=localhost;dbname=mydb',
+    'user',
+    'pass',
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+  );
+
+  $user_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+  
+  $stmt = $pdo->prepare('SELECT * FROM users WHERE id = :id');
+  $stmt->execute(['id' => $user_id]);
+  
+  while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo "<p>" . htmlspecialchars($row['name']) . "</p>";
+  }
+} catch (PDOException $e) {
+  error_log($e->getMessage());
+  echo "An error occurred";
+}
+?>`,
+        },
+      ],
       migrationRoadmap: [
         {
           step: 1,

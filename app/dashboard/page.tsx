@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CodeComparison from '@/components/CodeComparison';
 import {
   Upload,
   Loader2,
@@ -26,6 +28,13 @@ import {
 } from 'lucide-react';
 
 // Types
+interface CodeExample {
+  filename: string;
+  originalCode: string;
+  modernCode: string;
+  language: string;
+}
+
 interface AnalysisResult {
   projectName: string;
   status: 'success' | 'warning' | 'error';
@@ -49,6 +58,7 @@ interface AnalysisResult {
     estimatedTime: string;
     tasks: string[];
   }>;
+  codeExamples?: CodeExample[];
 }
 
 interface RepoFile {
@@ -71,6 +81,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
+  const comparisonRef = useRef<HTMLDivElement>(null);
 
   // GitHub repo state
   const [githubUrl, setGithubUrl] = useState('');
@@ -181,6 +193,11 @@ export default function DashboardPage() {
 
       const analysisData = await batchResponse.json();
       setAnalysisResult(analysisData);
+      
+      // Auto-scroll to comparison section after a short delay
+      setTimeout(() => {
+        comparisonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
     } catch (err) {
       setGithubError(err instanceof Error ? err.message : 'Failed to analyze repository');
     } finally {
@@ -233,6 +250,11 @@ export default function DashboardPage() {
 
       const analysisData = await analyzeResponse.json();
       setAnalysisResult(analysisData);
+      
+      // Auto-scroll to comparison section after a short delay
+      setTimeout(() => {
+        comparisonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during analysis');
     } finally {
@@ -707,6 +729,50 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 </Card>
+
+                {/* Code Comparison Section */}
+                {analysisResult.codeExamples && analysisResult.codeExamples.length > 0 && (
+                  <div ref={comparisonRef} className="scroll-mt-8">
+                    <Card className="p-6 bg-necro-darker/50 border-necro-green/20 backdrop-blur-md">
+                      <div className="flex items-center justify-between mb-6">
+                        <h4 className="text-xl font-bold text-white flex items-center gap-2">
+                          <Code2 className="w-5 h-5 text-necro-green" />
+                          Before & After Code Comparison
+                        </h4>
+                        {analysisResult.codeExamples.length > 1 && (
+                          <Select
+                            value={selectedFileIndex.toString()}
+                            onValueChange={(value) => setSelectedFileIndex(parseInt(value))}
+                          >
+                            <SelectTrigger className="w-[250px] bg-necro-dark border-necro-green/20 text-white">
+                              <SelectValue placeholder="Select a file" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-necro-dark border-necro-green/20">
+                              {analysisResult.codeExamples.map((example, index) => (
+                                <SelectItem
+                                  key={index}
+                                  value={index.toString()}
+                                  className="text-white hover:bg-necro-green/10"
+                                >
+                                  {example.filename}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+
+                      <CodeComparison
+                        originalCode={analysisResult.codeExamples[selectedFileIndex].originalCode}
+                        modernCode={analysisResult.codeExamples[selectedFileIndex].modernCode}
+                        originalLanguage={analysisResult.codeExamples[selectedFileIndex].language}
+                        modernLanguage={analysisResult.codeExamples[selectedFileIndex].language}
+                        originalTitle={`${analysisResult.codeExamples[selectedFileIndex].filename} (Legacy)`}
+                        modernTitle={`${analysisResult.codeExamples[selectedFileIndex].filename} (Modern)`}
+                      />
+                    </Card>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
