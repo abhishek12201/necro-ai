@@ -11,6 +11,9 @@ import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CodeComparison from '@/components/CodeComparison';
+import ResurrectionAnimation from '@/components/ResurrectionAnimation';
+import FileTreeVisualization from '@/components/FileTreeVisualization';
+import StatsCounter from '@/components/StatsCounter';
 import {
   Upload,
   Loader2,
@@ -27,7 +30,12 @@ import {
   FolderGit2,
   Download,
   Sparkles,
+  Home,
+  GitBranch,
+  Skull,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { ToastProvider, useToast } from '@/components/ui/toast';
 
 // Types
@@ -76,6 +84,14 @@ interface CloneResult {
 }
 
 function DashboardContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isTourMode = searchParams.get('tour') === '1';
+  const [showTour, setShowTour] = useState(isTourMode);
+
+  const isActive = (path: string) => pathname === path;
+
   const [code, setCode] = useState('');
   const [filename, setFilename] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -100,6 +116,19 @@ function DashboardContent() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const { showToast } = useToast();
   const [githubError, setGithubError] = useState<string | null>(null);
+
+  // Resurrection animation state
+  const [resurrectionStage, setResurrectionStage] = useState<'idle' | 'dead' | 'analyzing' | 'resurrected'>('idle');
+  const [showResults, setShowResults] = useState(false);
+
+  // File tree and stats state
+  const [showFileTree, setShowFileTree] = useState(false);
+  const [fileTreeData, setFileTreeData] = useState<Array<{ path: string; status: 'legacy' | 'modernized' }>>([]);
+  const [stats, setStats] = useState({ files: 0, issues: 0, lines: 0 });
+
+  const handleEndTour = () => {
+    setShowTour(false);
+  };
 
   const loadDemo = async (demoType: 'wordpress' | 'express') => {
     setIsLoadingDemo(true);
@@ -185,8 +214,21 @@ function DashboardContent() {
 
     setGithubError(null);
     setIsAnalyzing(true);
+    setShowResults(false);
+    
+    // Start resurrection animation
+    setResurrectionStage('analyzing');
 
     try {
+      // Simulate file-by-file analysis with progress updates
+      const totalFiles = cloneResult.files.length;
+      
+      // Analyze files in batches
+      for (let i = 0; i < totalFiles; i += 3) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        // Progress updates happen through the analyzing stage
+      }
+
       const batchResponse = await fetch('/api/batch-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,14 +243,31 @@ function DashboardContent() {
       }
 
       const analysisData = await batchResponse.json();
-      setAnalysisResult(analysisData);
       
-      // Auto-scroll to comparison section after a short delay
+      // Update stats from real data
+      setStats({
+        files: cloneResult.files.length,
+        issues: analysisData.outdatedPatterns?.length || 0,
+        lines: cloneResult.files.reduce((acc, f) => acc + Math.floor(f.size / 50), 0), // Estimate lines
+      });
+      
+      // Show resurrected stage
+      setResurrectionStage('resurrected');
+      
+      // Wait 2 seconds, then reveal results
       setTimeout(() => {
-        comparisonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 500);
+        setAnalysisResult(analysisData);
+        setResurrectionStage('idle');
+        setShowResults(true);
+        
+        // Auto-scroll to comparison section
+        setTimeout(() => {
+          comparisonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 500);
+      }, 2000);
     } catch (err) {
       setGithubError(err instanceof Error ? err.message : 'Failed to analyze repository');
+      setResurrectionStage('idle');
     } finally {
       setIsAnalyzing(false);
     }
@@ -219,6 +278,7 @@ function DashboardContent() {
 
     setIsGenerating(true);
     setGenerationProgress('Initializing code transformation...');
+    setShowFileTree(false);
 
     try {
       // Step 1: Initialize
@@ -245,12 +305,26 @@ function DashboardContent() {
       const generateData = await generateResponse.json();
       setProjectId(generateData.projectId);
 
+      // Create file tree data for visualization
+      const legacyFiles = (analysisResult.codeExamples || []).map((ex) => ({
+        path: ex.filename,
+        status: 'legacy' as const,
+      }));
+      const modernFiles = (analysisResult.codeExamples || []).map((ex) => ({
+        path: ex.filename.replace(/\.(js|jsx|php)$/, '.ts').replace(/\.jsx$/, '.tsx'),
+        status: 'modernized' as const,
+      }));
+      setFileTreeData([...legacyFiles, ...modernFiles]);
+
       // Step 3: Complete
       setGenerationProgress('Code generation complete!');
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       showToast('Modern code generated successfully!', 'success');
       setGenerationProgress('');
+      
+      // Show file tree after generation
+      setShowFileTree(true);
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : 'Failed to generate code',
@@ -336,6 +410,7 @@ function DashboardContent() {
 
       const analysisData = await analyzeResponse.json();
       setAnalysisResult(analysisData);
+      setShowResults(true);
       
       // Auto-scroll to comparison section after a short delay
       setTimeout(() => {
@@ -375,31 +450,89 @@ function DashboardContent() {
   };
 
   return (
-    <div className="min-h-screen bg-necro-dark text-white">
-      {/* Header */}
-      <header className="border-b border-necro-green/20 bg-necro-darker/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl font-bold bg-gradient-to-r from-necro-green to-necro-purple bg-clip-text text-transparent">
-              NECRO AI
-            </div>
-            <Badge className="bg-necro-purple/20 text-necro-purple border-necro-purple/30">
+    <div className="flex min-h-[calc(100vh-4rem)] bg-necro-dark text-white">
+      {/* Left Sidebar Navigation */}
+      <aside className="w-64 border-r border-necro-purple/30 bg-necro-darker/50 backdrop-blur-sm" aria-label="Dashboard sidebar navigation">
+        <div className="sticky top-16 p-4">
+          <div className="mb-6">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Dashboard
-            </Badge>
+            </h2>
           </div>
-          <Button
-            variant="outline"
-            className="border-necro-green/30 text-necro-green hover:bg-necro-green/10"
-            onClick={() => (window.location.href = '/')}
-          >
-            Back to Home
-          </Button>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-8">
+          <nav className="space-y-1" role="navigation" aria-label="Dashboard sections">
+            {/* Overview - Scroll to top */}
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              aria-label="Scroll to overview section"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-necro-green hover:bg-necro-green/10 transition-all group focus:outline-none focus:ring-2 focus:ring-inset focus:ring-necro-green"
+            >
+              <Home className="w-4 h-4 group-hover:text-necro-green" aria-hidden="true" />
+              <span>Overview</span>
+            </button>
+
+            {/* Divider */}
+            <div className="py-2" role="separator" aria-hidden="true">
+              <div className="h-px bg-necro-purple/20" />
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-3 mb-2">
+                Tools
+              </p>
+            </div>
+
+            {/* Code Comparison */}
+            <Link
+              href="/code-comparison"
+              aria-current={isActive('/code-comparison') ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group focus:outline-none focus:ring-2 focus:ring-inset focus:ring-necro-green ${
+                isActive('/code-comparison')
+                  ? 'bg-necro-green/20 text-necro-green shadow-[0_0_10px_rgba(0,255,65,0.2)] font-bold'
+                  : 'text-gray-300 hover:text-necro-green hover:bg-necro-green/10'
+              }`}
+            >
+              <Code2 className={`w-4 h-4 ${isActive('/code-comparison') ? 'text-necro-green' : 'group-hover:text-necro-green'}`} aria-hidden="true" />
+              <span>Code Comparison</span>
+            </Link>
+
+            {/* Dependency Graph */}
+            <Link
+              href="/dependency-graph"
+              aria-current={isActive('/dependency-graph') ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group focus:outline-none focus:ring-2 focus:ring-inset focus:ring-necro-green ${
+                isActive('/dependency-graph')
+                  ? 'bg-necro-green/20 text-necro-green shadow-[0_0_10px_rgba(0,255,65,0.2)] font-bold'
+                  : 'text-gray-300 hover:text-necro-green hover:bg-necro-green/10'
+              }`}
+            >
+              <GitBranch className={`w-4 h-4 ${isActive('/dependency-graph') ? 'text-necro-green' : 'group-hover:text-necro-green'}`} aria-hidden="true" />
+              <span>Dependency Graph</span>
+            </Link>
+
+            {/* Resurrection Demo */}
+            <Link
+              href="/resurrection-demo"
+              aria-current={isActive('/resurrection-demo') ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group focus:outline-none focus:ring-2 focus:ring-inset focus:ring-necro-green ${
+                isActive('/resurrection-demo')
+                  ? 'bg-necro-green/20 text-necro-green shadow-[0_0_10px_rgba(0,255,65,0.2)] font-bold'
+                  : 'text-gray-300 hover:text-necro-green hover:bg-necro-green/10'
+              }`}
+            >
+              <Skull className={`w-4 h-4 ${isActive('/resurrection-demo') ? 'text-necro-green' : 'group-hover:text-necro-green'}`} aria-hidden="true" />
+              <span>Resurrection Demo</span>
+            </Link>
+          </nav>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <section className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Page Heading */}
+          <h1 className="text-4xl font-bold text-center text-necro-green mb-8">
+            Dashboard
+          </h1>
+
+          <div className="grid lg:grid-cols-2 gap-8">
           {/* Left Section - Upload Area */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -530,7 +663,31 @@ function DashboardContent() {
             </Card>
 
             {/* Upload Legacy Code Section */}
-            <Card className="p-6 bg-necro-darker/50 border-necro-green/20 backdrop-blur-md">
+            <Card className={`p-6 bg-necro-darker/50 border-necro-green/20 backdrop-blur-md relative ${
+              showTour ? 'ring-2 ring-necro-green/60 shadow-[0_0_30px_rgba(0,255,65,0.4)]' : ''
+            }`}>
+              {/* Tour Tooltip */}
+              {showTour && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 z-10"
+                >
+                  <div className="bg-necro-green text-necro-darker px-4 py-2 rounded-lg shadow-lg text-sm font-semibold whitespace-nowrap flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Step 1: Paste or load legacy code, then click Analyze
+                    <button
+                      onClick={handleEndTour}
+                      className="ml-2 px-2 py-1 bg-necro-darker/20 hover:bg-necro-darker/30 rounded text-xs transition-colors"
+                    >
+                      End Tour
+                    </button>
+                  </div>
+                  {/* Arrow pointing down */}
+                  <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-necro-green" />
+                </motion.div>
+              )}
+
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-lg bg-necro-green/10 flex items-center justify-center">
                   <Upload className="w-5 h-5 text-necro-green" />
@@ -644,7 +801,11 @@ function DashboardContent() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {!analysisResult ? (
+            {resurrectionStage !== 'idle' ? (
+              <Card className="p-6 bg-necro-darker/50 border-necro-purple/20 backdrop-blur-md">
+                <ResurrectionAnimation stage={resurrectionStage as 'dead' | 'analyzing' | 'resurrected'} />
+              </Card>
+            ) : !analysisResult ? (
               <Card className="p-12 bg-necro-darker/50 border-necro-purple/20 backdrop-blur-md flex flex-col items-center justify-center min-h-[600px]">
                 <Code2 className="w-16 h-16 text-necro-purple/30 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-400 mb-2">
@@ -655,7 +816,12 @@ function DashboardContent() {
                 </p>
               </Card>
             ) : (
-              <div className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: showResults ? 1 : 0, y: showResults ? 0 : 20 }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="space-y-6"
+              >
                 {/* Project Info */}
                 <Card className="p-6 bg-necro-darker/50 border-necro-purple/20 backdrop-blur-md">
                   <div className="flex items-start justify-between mb-4">
@@ -693,6 +859,16 @@ function DashboardContent() {
                     />
                   </div>
                 </Card>
+
+                {/* Stats Counter */}
+                {stats.files > 0 && resurrectionStage === 'idle' && (
+                  <StatsCounter
+                    filesAnalyzed={stats.files}
+                    issuesFound={stats.issues}
+                    modernAlternatives={analysisResult.modernAlternatives?.length || 0}
+                    duration={2000}
+                  />
+                )}
 
                 {/* Outdated Patterns */}
                 <Card className="p-6 bg-necro-darker/50 border-necro-purple/20 backdrop-blur-md">
@@ -897,13 +1073,25 @@ function DashboardContent() {
                         )}
                       </div>
                     </Card>
+
+                    {/* File Tree Visualization */}
+                    {showFileTree && fileTreeData.length > 0 && (
+                      <Card className="mt-8 p-6 bg-necro-darker/50 border-necro-green/20 backdrop-blur-md">
+                        <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                          <FolderGit2 className="w-5 h-5 text-necro-green" />
+                          File Transformation
+                        </h4>
+                        <FileTreeVisualization files={fileTreeData} />
+                      </Card>
+                    )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
           </motion.div>
         </div>
-      </main>
+        </div>
+      </section>
     </div>
   );
 }

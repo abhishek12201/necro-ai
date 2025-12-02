@@ -5,7 +5,7 @@ import DependencyGraph, { DependencyNode } from '@/components/DependencyGraph';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 // Sample dependency data
 const sampleDependencies: DependencyNode[] = [
@@ -190,40 +190,13 @@ export default function DependencyGraphPage() {
 
   return (
     <div className="min-h-screen bg-necro-dark text-white">
-      {/* Header */}
-      <header className="border-b border-necro-green/20 bg-necro-darker/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl font-bold bg-gradient-to-r from-necro-green to-necro-purple bg-clip-text text-transparent">
-              NECRO AI
-            </div>
-            <Badge className="bg-necro-green/20 text-necro-green border-necro-green/30">
-              Dependency Graph
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="border-necro-purple/30 text-necro-purple hover:bg-necro-purple/10"
-              onClick={handleRefresh}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              className="border-necro-green/30 text-necro-green hover:bg-necro-green/10"
-              onClick={() => (window.location.href = '/dashboard')}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Page Heading */}
+        <h1 className="text-4xl font-bold text-center text-necro-green mb-8">
+          Dependency Graph
+        </h1>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="p-4 bg-necro-darker/50 border-necro-green/20 backdrop-blur-md">
@@ -277,7 +250,7 @@ export default function DependencyGraphPage() {
             </div>
           </div>
         </Card>
-      </main>
+      </div>
     </div>
   );
 }

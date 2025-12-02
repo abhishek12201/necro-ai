@@ -5,7 +5,7 @@ import CodeComparison from '@/components/CodeComparison';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Code2 } from 'lucide-react';
+import { Code2 } from 'lucide-react';
 
 // Sample code examples
 const examples = {
@@ -212,30 +212,13 @@ export default function CodeComparisonPage() {
 
   return (
     <div className="min-h-screen bg-necro-dark text-white">
-      {/* Header */}
-      <header className="border-b border-necro-green/20 bg-necro-darker/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl font-bold bg-gradient-to-r from-necro-green to-necro-purple bg-clip-text text-transparent">
-              NECRO AI
-            </div>
-            <Badge className="bg-necro-green/20 text-necro-green border-necro-green/30">
-              Code Comparison
-            </Badge>
-          </div>
-          <Button
-            variant="outline"
-            className="border-necro-green/30 text-necro-green hover:bg-necro-green/10"
-            onClick={() => (window.location.href = '/dashboard')}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Page Heading */}
+        <h1 className="text-4xl font-bold text-center text-necro-green mb-8">
+          Code Comparison
+        </h1>
+
         {/* Example Selector */}
         <Card className="p-6 bg-necro-darker/50 border-necro-green/20 backdrop-blur-md mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -328,7 +311,7 @@ export default function CodeComparisonPage() {
             )}
           </div>
         </Card>
-      </main>
+      </div>
     </div>
   );
 }

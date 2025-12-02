@@ -15,12 +15,11 @@ import {
   Sparkles,
   Check,
   Star,
-  Github,
-  Twitter,
   CheckCircle2,
   BadgeCheck
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Floating particles component with upward motion
 const FloatingParticles = () => {
@@ -142,7 +141,7 @@ const MatrixGrid = () => {
 };
 
 // Hero Section
-const HeroSection = () => {
+const HeroSection = ({ onStartTour }: { onStartTour: () => void }) => {
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
   const scale = useTransform(scrollY, [0, 300], [1, 0.8]);
@@ -219,8 +218,16 @@ const HeroSection = () => {
           </Button>
           <Button 
             size="lg" 
+            className="text-xl px-10 py-7 bg-necro-purple text-white hover:bg-necro-purple/90 border-2 border-necro-purple shadow-[0_0_20px_rgba(157,78,221,0.4)] hover:shadow-[0_0_30px_rgba(157,78,221,0.6)] transition-all duration-300 font-bold"
+            onClick={onStartTour}
+          >
+            <Map className="mr-2 w-6 h-6" />
+            Start Product Tour
+          </Button>
+          <Button 
+            size="lg" 
             variant="outline" 
-            className="text-xl px-10 py-7 border-2 border-necro-purple text-necro-purple hover:bg-necro-purple/10"
+            className="text-xl px-10 py-7 border-2 border-necro-green/30 text-necro-green hover:bg-necro-green/10"
           >
             Watch Demo
           </Button>
@@ -724,75 +731,29 @@ const FinalCTASection = () => {
   );
 };
 
-// Footer
-const Footer = () => {
-  return (
-    <footer className="py-12 px-4 bg-necro-darker border-t border-necro-green/20">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
-          {/* Logo and tagline */}
-          <div className="text-center md:text-left">
-            <div className="text-3xl font-bold bg-gradient-to-r from-necro-green to-necro-purple bg-clip-text text-transparent mb-2">
-              NECRO AI
-            </div>
-            <p className="text-gray-500 text-sm">Bringing legacy code back from the dead, one line at a time.</p>
-          </div>
-
-          {/* Social links */}
-          <div className="flex items-center gap-6">
-            <a 
-              href="https://github.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-necro-green transition-colors duration-300"
-            >
-              <Github className="w-6 h-6" />
-            </a>
-            <a 
-              href="https://twitter.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-necro-green transition-colors duration-300"
-            >
-              <Twitter className="w-6 h-6" />
-            </a>
-          </div>
-
-          {/* Built with Kiro badge */}
-          <div className="flex items-center gap-2 px-4 py-2 bg-necro-dark/50 border border-necro-purple/30 rounded-full backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-necro-purple" />
-            <span className="text-sm text-gray-400">Built with <span className="text-necro-purple font-semibold">Kiro</span></span>
-          </div>
-        </div>
-
-        {/* Copyright */}
-        <div className="text-center text-gray-500 text-sm pt-6 border-t border-necro-dark">
-          <p>© 2024 Necro AI. All rights reserved.</p>
-        </div>
-      </div>
-    </footer>
-  );
-};
-
 // Main Page Component
 export default function Home() {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const handleStartTour = () => {
+    router.push('/dashboard?tour=1');
+  };
+
   if (!mounted) return null;
 
   return (
     <main className="bg-necro-darker text-white overflow-x-hidden">
-      <HeroSection />
+      <HeroSection onStartTour={handleStartTour} />
       <FeaturesSection />
       <HowItWorksSection />
       <TestimonialsSection />
       <PricingSection />
       <FinalCTASection />
-      <Footer />
     </main>
   );
 }
