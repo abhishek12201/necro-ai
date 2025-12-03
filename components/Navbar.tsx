@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, Code2, Menu, X, Wrench, LayoutDashboard, GitBranch, Skull, Home } from 'lucide-react';
+import { ChevronDown, Code2, Menu, X, Wrench, LayoutDashboard, GitBranch, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
@@ -24,7 +24,6 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/code-comparison', label: 'Code Comparison', icon: Code2 },
     { href: '/dependency-graph', label: 'Dependency Graph', icon: GitBranch },
-    { href: '/resurrection-demo', label: 'Resurrection Demo', icon: Skull },
   ];
 
   return (
@@ -103,7 +102,7 @@ export default function Navbar() {
                     onMouseLeave={() => setShowTools(false)}
                     role="menu"
                     aria-label="Tools submenu"
-                    className="absolute top-full right-0 mt-2 w-64 bg-necro-dark/95 backdrop-blur-md border border-necro-green/20 rounded-lg shadow-[0_0_20px_rgba(0,255,65,0.1)] overflow-hidden"
+                    className="absolute top-full right-0 mt-2 w-64 bg-[#0a0a0a] border border-necro-green/40 rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.3)] overflow-hidden"
                   >
                     {toolLinks.map((link, index) => {
                       const Icon = link.icon;

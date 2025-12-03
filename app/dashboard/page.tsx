@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,7 +11,6 @@ import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CodeComparison from '@/components/CodeComparison';
-import ResurrectionAnimation from '@/components/ResurrectionAnimation';
 import FileTreeVisualization from '@/components/FileTreeVisualization';
 import StatsCounter from '@/components/StatsCounter';
 import {
@@ -32,7 +31,6 @@ import {
   Sparkles,
   Home,
   GitBranch,
-  Skull,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -117,8 +115,7 @@ function DashboardContent() {
   const { showToast } = useToast();
   const [githubError, setGithubError] = useState<string | null>(null);
 
-  // Resurrection animation state
-  const [resurrectionStage, setResurrectionStage] = useState<'idle' | 'dead' | 'analyzing' | 'resurrected'>('idle');
+  // Results display state
   const [showResults, setShowResults] = useState(false);
 
   // File tree and stats state
@@ -215,20 +212,8 @@ function DashboardContent() {
     setGithubError(null);
     setIsAnalyzing(true);
     setShowResults(false);
-    
-    // Start resurrection animation
-    setResurrectionStage('analyzing');
 
     try {
-      // Simulate file-by-file analysis with progress updates
-      const totalFiles = cloneResult.files.length;
-      
-      // Analyze files in batches
-      for (let i = 0; i < totalFiles; i += 3) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        // Progress updates happen through the analyzing stage
-      }
-
       const batchResponse = await fetch('/api/batch-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -251,23 +236,15 @@ function DashboardContent() {
         lines: cloneResult.files.reduce((acc, f) => acc + Math.floor(f.size / 50), 0), // Estimate lines
       });
       
-      // Show resurrected stage
-      setResurrectionStage('resurrected');
+      setAnalysisResult(analysisData);
+      setShowResults(true);
       
-      // Wait 2 seconds, then reveal results
+      // Auto-scroll to comparison section
       setTimeout(() => {
-        setAnalysisResult(analysisData);
-        setResurrectionStage('idle');
-        setShowResults(true);
-        
-        // Auto-scroll to comparison section
-        setTimeout(() => {
-          comparisonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 500);
-      }, 2000);
+        comparisonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
     } catch (err) {
       setGithubError(err instanceof Error ? err.message : 'Failed to analyze repository');
-      setResurrectionStage('idle');
     } finally {
       setIsAnalyzing(false);
     }
@@ -505,20 +482,6 @@ function DashboardContent() {
             >
               <GitBranch className={`w-4 h-4 ${isActive('/dependency-graph') ? 'text-necro-green' : 'group-hover:text-necro-green'}`} aria-hidden="true" />
               <span>Dependency Graph</span>
-            </Link>
-
-            {/* Resurrection Demo */}
-            <Link
-              href="/resurrection-demo"
-              aria-current={isActive('/resurrection-demo') ? 'page' : undefined}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group focus:outline-none focus:ring-2 focus:ring-inset focus:ring-necro-green ${
-                isActive('/resurrection-demo')
-                  ? 'bg-necro-green/20 text-necro-green shadow-[0_0_10px_rgba(0,255,65,0.2)] font-bold'
-                  : 'text-gray-300 hover:text-necro-green hover:bg-necro-green/10'
-              }`}
-            >
-              <Skull className={`w-4 h-4 ${isActive('/resurrection-demo') ? 'text-necro-green' : 'group-hover:text-necro-green'}`} aria-hidden="true" />
-              <span>Resurrection Demo</span>
             </Link>
           </nav>
         </div>
@@ -801,11 +764,7 @@ function DashboardContent() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {resurrectionStage !== 'idle' ? (
-              <Card className="p-6 bg-necro-darker/50 border-necro-purple/20 backdrop-blur-md">
-                <ResurrectionAnimation stage={resurrectionStage as 'dead' | 'analyzing' | 'resurrected'} />
-              </Card>
-            ) : !analysisResult ? (
+            {!analysisResult ? (
               <Card className="p-12 bg-necro-darker/50 border-necro-purple/20 backdrop-blur-md flex flex-col items-center justify-center min-h-[600px]">
                 <Code2 className="w-16 h-16 text-necro-purple/30 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-400 mb-2">
@@ -861,7 +820,7 @@ function DashboardContent() {
                 </Card>
 
                 {/* Stats Counter */}
-                {stats.files > 0 && resurrectionStage === 'idle' && (
+                {stats.files > 0 && (
                   <StatsCounter
                     filesAnalyzed={stats.files}
                     issuesFound={stats.issues}
@@ -1099,7 +1058,9 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <ToastProvider>
-      <DashboardContent />
+      <Suspense fallback={<div className="min-h-screen bg-necro-dark flex items-center justify-center"><div className="text-necro-green">Loading...</div></div>}>
+        <DashboardContent />
+      </Suspense>
     </ToastProvider>
   );
 }

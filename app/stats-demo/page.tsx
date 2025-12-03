@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function ResurrectionDemoRedirect() {
+export default function StatsDemoRedirect() {
   const router = useRouter();
 
   useEffect(() => {
