@@ -1,5 +1,36 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { projectName, analysis, batch } = body;
+
+    if (!projectName || !analysis) {
+      return NextResponse.json(
+        { error: 'Missing required fields: projectName and analysis' },
+        { status: 400 }
+      );
+    }
+
+    // Return the payload unchanged for now
+    // This endpoint standardizes the shape for report generation
+    const reportPayload = {
+      projectName,
+      analysis,
+      batch: batch || null,
+      generatedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json(reportPayload);
+  } catch (error) {
+    console.error('Report generation error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate report' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

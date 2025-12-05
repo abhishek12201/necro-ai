@@ -216,21 +216,6 @@ const HeroSection = ({ onStartTour }: { onStartTour: () => void }) => {
             <Sparkles className="mr-2 w-6 h-6" />
             Start Resurrection
           </Button>
-          <Button 
-            size="lg" 
-            className="text-xl px-10 py-7 bg-necro-purple text-white hover:bg-necro-purple/90 border-2 border-necro-purple shadow-[0_0_20px_rgba(157,78,221,0.4)] hover:shadow-[0_0_30px_rgba(157,78,221,0.6)] transition-all duration-300 font-bold"
-            onClick={onStartTour}
-          >
-            <Map className="mr-2 w-6 h-6" />
-            Start Product Tour
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="text-xl px-10 py-7 border-2 border-necro-green/30 text-necro-green hover:bg-necro-green/10"
-          >
-            Watch Demo
-          </Button>
         </motion.div>
 
         <motion.div

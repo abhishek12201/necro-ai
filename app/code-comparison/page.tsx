@@ -203,6 +203,144 @@ async function processUser(userId) {
     modernLang: 'javascript',
     title: 'Callbacks → Async/Await',
   },
+  wordpress: {
+    original: `<?php
+/**
+ * 👻 Haunted WordPress Theme - Cursed Blog Posts
+ * Warning: Contains ancient PHP rituals and jQuery spirits
+ */
+
+// The cursed query_posts spell
+query_posts('posts_per_page=10&cat=1');
+
+if (have_posts()) : ?>
+  <div id="haunted-posts">
+    <?php while (have_posts()) : the_post(); ?>
+      <div class="post-<?php the_ID(); ?>">
+        <h2><?php the_title(); ?></h2>
+        <div class="meta">
+          Posted by <?php the_author(); ?> 
+          on <?php the_date(); ?>
+        </div>
+        <div class="content">
+          <?php the_content(); ?>
+        </div>
+        <a href="#" class="read-more" 
+           data-id="<?php the_ID(); ?>">
+          Read More...
+        </a>
+      </div>
+    <?php endwhile; ?>
+  </div>
+
+  <script>
+    // Inline jQuery haunting your DOM
+    jQuery(document).ready(function($) {
+      $('.read-more').click(function(e) {
+        e.preventDefault();
+        var postId = $(this).data('id');
+        
+        $.ajax({
+          url: '/wp-admin/admin-ajax.php',
+          type: 'POST',
+          data: {
+            action: 'load_more_content',
+            post_id: postId
+          },
+          success: function(response) {
+            $('.post-' + postId + ' .content')
+              .html(response);
+          }
+        });
+      });
+    });
+  </script>
+<?php endif; 
+wp_reset_query(); // Attempting to banish the curse
+?>`,
+    modern: `// ✨ Exorcised React Component - Clean & Modern
+import { useState, useEffect } from 'react';
+
+interface Post {
+  id: number;
+  title: string;
+  author: string;
+  date: string;
+  excerpt: string;
+  content: string;
+}
+
+export default function BlogPosts() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        const response = await fetch('/api/posts?limit=10&category=1');
+        const data = await response.json();
+        setPosts(data);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPosts();
+  }, []);
+
+  const handleReadMore = async (postId: number) => {
+    if (expandedId === postId) {
+      setExpandedId(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(\`/api/posts/\${postId}\`);
+      const data = await response.json();
+      
+      setPosts(prev => prev.map(post =>
+        post.id === postId ? { ...post, content: data.content } : post
+      ));
+      
+      setExpandedId(postId);
+    } catch (error) {
+      console.error('Failed to load content:', error);
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading posts...</div>;
+  }
+
+  return (
+    <div className="blog-posts">
+      {posts.map(post => (
+        <article key={post.id} className="post">
+          <h2>{post.title}</h2>
+          <div className="meta">
+            Posted by {post.author} on {post.date}
+          </div>
+          <div className="content">
+            {expandedId === post.id ? post.content : post.excerpt}
+          </div>
+          <button
+            onClick={() => handleReadMore(post.id)}
+            className="read-more"
+          >
+            {expandedId === post.id ? 'Show Less' : 'Read More...'}
+          </button>
+        </article>
+      ))}
+    </div>
+  );
+}`,
+    originalLang: 'php',
+    modernLang: 'typescript',
+    title: '👻 Haunted WordPress → Modern React',
+  },
 };
 
 export default function CodeComparisonPage() {
@@ -306,6 +444,23 @@ export default function CodeComparisonPage() {
                 </p>
                 <p className="text-sm text-gray-400">
                   Benefits: Cleaner syntax, easier to read and maintain, better error handling, avoids callback hell
+                </p>
+              </>
+            )}
+            {selectedExample === 'wordpress' && (
+              <>
+                <p>
+                  <strong className="text-necro-green">👻 Cursed Legacy:</strong> Haunted WordPress theme with query_posts, 
+                  mixed PHP/HTML, inline jQuery, and AJAX calls to admin-ajax.php
+                </p>
+                <p>
+                  <strong className="text-necro-green">✨ Exorcised Modern:</strong> Clean headless architecture with React, 
+                  TypeScript, REST API endpoints, and proper state management
+                </p>
+                <p className="text-sm text-gray-400">
+                  <strong>🎃 Kiroween Special:</strong> Exorcise cursed WordPress themes into clean React components! 
+                  Benefits include: separation of concerns, type safety, no jQuery dependency, RESTful API design, 
+                  better performance, easier testing, and freedom from the WordPress loop of doom.
                 </p>
               </>
             )}

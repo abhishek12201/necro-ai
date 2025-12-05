@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function getFileType(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase();
+  const typeMap: { [key: string]: string } = {
+    'js': 'javascript',
+    'jsx': 'javascript',
+    'ts': 'typescript',
+    'tsx': 'typescript',
+    'php': 'php',
+    'py': 'python',
+    'rb': 'ruby',
+    'java': 'java',
+    'css': 'css',
+    'html': 'html',
+    'json': 'json',
+    'md': 'markdown',
+  };
+  return typeMap[ext || ''] || 'unknown';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -22,35 +41,85 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Simulate cloning and file discovery
-    // In a real app, you would:
-    // 1. Use GitHub API to fetch repository contents
-    // 2. Clone the repo or fetch files via API
-    // 3. Scan for code files
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Extract owner and repo from GitHub URL
+    const urlParts = githubUrl.replace(/\/$/, '').split('/');
+    const owner = urlParts[urlParts.length - 2];
+    const repo = urlParts[urlParts.length - 1];
 
-    // Mock file list - in production, this would come from actual repo
-    const mockFiles = [
-      { path: 'src/index.js', type: 'javascript', size: 2048 },
-      { path: 'src/app.js', type: 'javascript', size: 4096 },
-      { path: 'src/utils/helpers.js', type: 'javascript', size: 1536 },
-      { path: 'src/components/Header.jsx', type: 'javascript', size: 3072 },
-      { path: 'src/components/Footer.jsx', type: 'javascript', size: 2560 },
-      { path: 'public/index.html', type: 'html', size: 1024 },
-      { path: 'styles/main.css', type: 'css', size: 5120 },
-      { path: 'config/database.php', type: 'php', size: 2048 },
-      { path: 'api/routes.php', type: 'php', size: 3584 },
-      { path: 'lib/legacy-utils.js', type: 'javascript', size: 6144 },
-      { path: 'vendor/jquery-1.11.0.min.js', type: 'javascript', size: 94208 },
-      { path: 'scripts/old-ajax.js', type: 'javascript', size: 2816 },
-    ];
+    // Fetch repository contents from GitHub API
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`;
+    
+    try {
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Necro-AI-App',
+        },
+      });
 
-    return NextResponse.json({
-      filesFound: mockFiles.length,
-      files: mockFiles,
-      projectName,
-      clonedAt: new Date().toISOString(),
-    });
+      if (!response.ok) {
+        // Try 'master' branch if 'main' doesn't exist
+        const masterResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/git/trees/master?recursive=1`,
+          {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'Necro-AI-App',
+            },
+          }
+        );
+
+        if (!masterResponse.ok) {
+          throw new Error('Failed to fetch repository contents');
+        }
+
+        const data = await masterResponse.json();
+        const files = data.tree
+          .filter((item: any) => item.type === 'blob')
+          .map((item: any) => ({
+            path: item.path,
+            type: getFileType(item.path),
+            size: item.size || 0,
+            sha: item.sha,
+            url: item.url,
+          }));
+
+        return NextResponse.json({
+          filesFound: files.length,
+          files,
+          projectName,
+          clonedAt: new Date().toISOString(),
+          owner,
+          repo,
+        });
+      }
+
+      const data = await response.json();
+      const files = data.tree
+        .filter((item: any) => item.type === 'blob')
+        .map((item: any) => ({
+          path: item.path,
+          type: getFileType(item.path),
+          size: item.size || 0,
+          sha: item.sha,
+          url: item.url,
+        }));
+
+      return NextResponse.json({
+        filesFound: files.length,
+        files,
+        projectName,
+        clonedAt: new Date().toISOString(),
+        owner,
+        repo,
+      });
+    } catch (fetchError) {
+      console.error('GitHub API error:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to fetch repository from GitHub. Please check the URL and try again.' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Clone error:', error);
     return NextResponse.json(

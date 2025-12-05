@@ -79,7 +79,7 @@ export default function StatsCounter({
       color: 'text-yellow-400',
     },
     {
-      label: 'Modern Alternatives',
+      label: 'Modernization Opportunities',
       value: modernAlternatives,
       icon: <Sparkles className="w-8 h-8" />,
       color: 'text-necro-green',
@@ -150,7 +150,7 @@ export default function StatsCounter({
               </motion.div>
 
               {/* Label */}
-              <div className="text-gray-400 text-sm font-medium">{stat.label}</div>
+              <div className={`text-sm font-medium ${stat.label === 'Modernization Opportunities' ? 'text-necro-green' : 'text-gray-400'}`}>{stat.label}</div>
 
               {/* Progress bar */}
               <motion.div
